@@ -16,6 +16,8 @@ three products in the suite:
   supplies `customer_id`, `signup_date` for audience targeting
 - **Product B, Staff Inventory & Ops Dashboard** (Philip Myers):
   supplies `ISBN`, `Non Book UPC` for product-based campaigns
+- **Product C, Customer Support Chatbot** (Priscilla): data relationship
+  to this product still being confirmed
 - **Event data** (`event_id`, `event_name`, `event_date`, `event_time`):
   drives author event and book-signing promos
 
