@@ -1,4 +1,4 @@
-# Marketing Content Generator
+# Marketing Content Generator (Product D)
 
 Part of Team 5's four-product suite for Riverside Books Bookstore.
 
@@ -9,8 +9,8 @@ promos for the bookstore's customers.
 
 ## Role in the suite
 
-This product pulls shared customer and inventory data from the other
-three products in the suite:
+This is Product D in the suite, pulling shared customer and inventory
+data from the other three products:
 
 - **Product A, Customer Ordering & Loyalty App** (Jeffrey de la Cruz):
   supplies `customer_id`, `signup_date` for audience targeting
@@ -18,14 +18,4 @@ three products in the suite:
   supplies `ISBN`, `Non Book UPC` for product-based campaigns
 - **Product C, Customer Support Chatbot** (Priscilla): data relationship
   to this product still being confirmed
-- **Event data** (`event_id`, `event_name`, `event_date`, `event_time`):
-  drives author event and book-signing promos
-
-## Shared data contract
-
-| Column | Format | Example |
-|---|---|---|
-| customer_id | string | cust_00042 |
-| signup_date | date (YYYY-MM-DD) | 2026-03-14 |
-| ISBN | 13-digit, hyphens included, string | 978-1-56592-479-6 |
-| Non Book UPC | string | 012345678905 |
+- **Event data** (`event_id`, `event_name`
