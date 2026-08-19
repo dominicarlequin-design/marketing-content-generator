@@ -37,3 +37,13 @@ loyalty data from the other three products:
 | order_id | TEXT, format `ord_XXXXX` | ord_98765 |
 | order_status | ENUM: Pending, Ready for Pickup, Completed, Cancelled | Completed |
 | reward_points | INTEGER | 250 |
+
+## Future Features (not yet built)
+
+- **Social share button** (proposed in Product A's feature doc): a button
+  inside Jeffrey's Ordering & Loyalty App that lets customers share a
+  recent pre-order or loyalty milestone (e.g. crossing a `reward_points`
+  threshold, `order_status` becoming `Completed`) to social media. This
+  would require a new post-generation path in this product, separate from
+  the current ISBN-based book announcement flow, since it generates
+  milestone/order content instead of book content.
