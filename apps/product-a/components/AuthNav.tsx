@@ -37,7 +37,9 @@ export function AuthNav() {
       <Link href="/orders" className="underline">
         My orders
       </Link>
-      <span className="text-neutral-500">{customerId}</span>
+      <Link href="/account" className="text-neutral-500 underline">
+        {customerId}
+      </Link>
       <button
         type="button"
         onClick={async () => {

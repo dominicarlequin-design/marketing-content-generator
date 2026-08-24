@@ -342,3 +342,22 @@ once typing starts and isn't a reliable accessible name for all screen readers.
 accessibility tree snapshot on `/signup` now shows `[textbox] "Email"` / `[textbox] "Password"`
 resolved from the real labels (previously placeholder-derived, less reliable) — confirmed via
 screenshot too, not just the accessibility tree.
+
+## 2026-08-24 — Account page
+
+Built on `product-a/account-page`, stacked on `product-a/accessibility-labels`. Closes another
+real gap: `customer_id` and `signup_date` were tracked since the very first auth work but never
+shown anywhere.
+
+- `lib/auth.ts` — added `getCurrentCustomer()` (customer_id, email, signup_date in one call);
+  `getCurrentCustomerId()` now calls it internally instead of duplicating the session/customers
+  query.
+- `app/account/page.tsx` — shows customer ID, email, member-since date, and an honest "Loyalty
+  points: not built yet — no earn rate has been decided" line rather than a fake 0 or hiding the
+  row entirely.
+- `components/AuthNav.tsx` — the customer_id text in the nav is now a link to `/account`
+  (avoided adding a whole separate nav item for one more link).
+
+**Verified live** (real browser, `bun run dev`): build compiles, lint passes, logged-out
+`/account` shows the correct login gate with zero console errors. The populated view — real
+customer_id/email/signup_date — is unverified, same live-Supabase constraint as `/orders`.

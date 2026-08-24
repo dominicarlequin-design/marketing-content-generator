@@ -64,23 +64,42 @@ export async function signOut(): Promise<void> {
   await supabase.auth.signOut();
 }
 
-export async function getCurrentCustomerId(): Promise<string | null> {
+export type CurrentCustomer = {
+  customerId: string;
+  email: string | null;
+  signupDate: string | null;
+};
+
+export async function getCurrentCustomer(): Promise<CurrentCustomer | null> {
   const supabase = getSupabaseClient();
   if (!supabase) {
     return null;
   }
 
   const { data: sessionData } = await supabase.auth.getSession();
-  const authUserId = sessionData.session?.user.id;
-  if (!authUserId) {
+  const authUser = sessionData.session?.user;
+  if (!authUser) {
     return null;
   }
 
   const { data } = await supabase
     .from("customers")
-    .select("customer_id")
-    .eq("auth_user_id", authUserId)
+    .select("customer_id, signup_date")
+    .eq("auth_user_id", authUser.id)
     .maybeSingle();
 
-  return data?.customer_id ?? null;
+  if (!data) {
+    return null;
+  }
+
+  return {
+    customerId: data.customer_id,
+    email: authUser.email ?? null,
+    signupDate: data.signup_date,
+  };
+}
+
+export async function getCurrentCustomerId(): Promise<string | null> {
+  const customer = await getCurrentCustomer();
+  return customer?.customerId ?? null;
 }
