@@ -361,3 +361,25 @@ shown anywhere.
 **Verified live** (real browser, `bun run dev`): build compiles, lint passes, logged-out
 `/account` shows the correct login gate with zero console errors. The populated view — real
 customer_id/email/signup_date — is unverified, same live-Supabase constraint as `/orders`.
+
+## 2026-08-24 — Cart logic tests
+
+Built on `product-a/cart-tests`, stacked on `product-a/account-page`. First real automated tests
+in Product A — everything until now was verified by hand in a browser each time, which doesn't
+scale and doesn't run in CI. Matches the repo's existing convention: Product D uses Vitest
+(`apps/product-d/app/contentGenerator.test.js`, on `product-d/session-openlibrary-integration`),
+so Product A does too rather than introducing a second test runner.
+
+- `vitest.config.ts` — `environment: "jsdom"` (needed — `lib/cart.ts` reads `window`/
+  `localStorage`, which don't exist in Vitest's default Node environment).
+- `package.json` — added `vitest`/`jsdom` devDependencies, a `test` script, and `"type":
+  "module"` (fixes a real Vite config-loader warning about ESM syntax in a CommonJS-loaded file,
+  not just cosmetic — confirmed `lint`/`build` still pass clean after the change).
+- `lib/cart.test.ts` — 11 tests: add-new vs. increment-existing, multiple distinct line items,
+  remove (found and not-found isbn), set-quantity (update, and remove at 0 / negative — this is
+  the exact path the cart page's quantity input hits when someone types 0), clear, and a direct
+  `localStorage` assertion so persistence itself is covered, not just the in-memory state.
+
+**Actually run, not just written**: `bun run test` → 11 passed (11), real output pasted into
+this note, not claimed from reading the code. Re-ran `bun run lint` and `bun run build` after
+the `package.json` change to confirm nothing broke — both still pass.
