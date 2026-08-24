@@ -2,13 +2,12 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { clearCart, getCart, removeFromCart, setQuantity, type CartItem } from "@/lib/cart";
+import { clearCart, removeFromCart, setQuantity, useCartItems } from "@/lib/cart";
 import { getCurrentCustomerId } from "@/lib/auth";
 import { placeOrder } from "@/lib/orders";
 
 export default function CartPage() {
-  const [items, setItems] = useState<CartItem[]>([]);
-  const [hydrated, setHydrated] = useState(false);
+  const items = useCartItems();
   const [customerId, setCustomerId] = useState<string | null>(null);
   const [placing, setPlacing] = useState(false);
   const [orderError, setOrderError] = useState<string | null>(null);
@@ -16,8 +15,6 @@ export default function CartPage() {
   const [placedOrderTotal, setPlacedOrderTotal] = useState<number | null>(null);
 
   useEffect(() => {
-    setItems(getCart());
-    setHydrated(true);
     getCurrentCustomerId().then(setCustomerId);
   }, []);
 
@@ -38,12 +35,7 @@ export default function CartPage() {
 
     setPlacedOrderTotal(totalPrice);
     clearCart();
-    setItems([]);
     setPlacedOrderId(result.orderId);
-  }
-
-  if (!hydrated) {
-    return null;
   }
 
   if (placedOrderId) {
@@ -93,14 +85,12 @@ export default function CartPage() {
                     type="number"
                     min={0}
                     value={item.quantity}
-                    onChange={(event) =>
-                      setItems(setQuantity(item.isbn, Number(event.target.value)))
-                    }
+                    onChange={(event) => setQuantity(item.isbn, Number(event.target.value))}
                     className="w-14 rounded border border-neutral-300 px-2 py-1 text-sm"
                   />
                   <button
                     type="button"
-                    onClick={() => setItems(removeFromCart(item.isbn))}
+                    onClick={() => removeFromCart(item.isbn)}
                     className="text-xs text-red-600 underline"
                   >
                     Remove

@@ -229,3 +229,35 @@ undecided. That's the next real question before writing the loyalty code, not im
 **Verified live** (real browser, `bun run dev`, port 3000): build compiles clean, catalog shows
 all 8 sample prices correctly, added two different books to cart and confirmed both the per-line
 math and the grand total ($17.99 + $18.99 = $36.98) are correct, zero console errors throughout.
+
+## 2026-08-24 — Fix: real lint error in the cart's hydration pattern
+
+Ran `bun run lint` for the first time this session on `product-a/cart-lint-fix`, stacked on
+`product-a/pricing` — hadn't been checked before now. Found a real `react-hooks/set-state-in-effect`
+error in `app/cart/page.tsx`: the "read localStorage in a `useEffect`, gate on a `hydrated` flag"
+pattern used throughout this session is legitimate (SSR has no `window`) but the newer React
+hooks lint rule flags synchronous `setState` in effects generically.
+
+Fixed properly rather than suppressing the rule — switched `lib/cart.ts` to
+`useSyncExternalStore`, React's own sanctioned solution for exactly this (external, client-only,
+mutable state):
+
+- `lib/cart.ts` now keeps a stable in-memory `cachedItems` snapshot, notifies subscribers on
+  every mutation (`addToCart`/`removeFromCart`/`setQuantity`/`clearCart` all funnel through
+  `writeCart`), and exports `useCartItems()` — no more manual `hydrated` flag, no more
+  `setItems(...)` calls after every mutation, components just re-render automatically.
+- `app/cart/page.tsx` — uses `useCartItems()` instead of local `useState` + `useEffect` for
+  cart contents. The `customerId` fetch stays a normal effect (that one's fine — the lint rule
+  explicitly allows `setState` inside an async callback, only flags synchronous calls in the
+  effect body).
+
+**Caught my own bug while verifying this**: first pass had `getServerSnapshot` return a fresh
+`[]` literal each call, which triggered "getServerSnapshot should be cached to avoid an infinite
+loop" in the browser console. `useSyncExternalStore` requires a stable reference from *both*
+snapshot functions, not just the client one. Fixed with a shared `EMPTY_CART` constant.
+
+**Verified live** (real browser, `bun run dev`): `bun run lint` now passes clean, build compiles,
+cart reactivity re-tested end to end — added 2 books (math correct: $17.99 + $16.99 = $34.98),
+removed one, total updated instantly to $16.99, zero console errors throughout. This is the
+first time cart mutations were confirmed to update the UI reactively without a manual
+`setItems(...)` call after each one.

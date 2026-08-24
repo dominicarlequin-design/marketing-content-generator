@@ -1,3 +1,4 @@
+import { useSyncExternalStore } from "react";
 import type { Book } from "@/types/book";
 
 const CART_STORAGE_KEY = "riverside-books-cart";
@@ -22,26 +23,54 @@ function readCart(): CartItem[] {
   }
 }
 
+// A stable in-memory snapshot, kept in sync with localStorage. useSyncExternalStore requires
+// getSnapshot to return a cached reference (not re-parse JSON on every call), so this is the
+// source of truth components read from; localStorage is just where it persists across reloads.
+let cachedItems: CartItem[] = readCart();
+
+const listeners = new Set<() => void>();
+
 function writeCart(items: CartItem[]): void {
-  if (typeof window === "undefined") {
-    return;
+  cachedItems = items;
+  if (typeof window !== "undefined") {
+    window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
   }
-  window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
+  listeners.forEach((listener) => listener());
+}
+
+function subscribe(listener: () => void): () => void {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
+// A single stable reference — useSyncExternalStore requires getServerSnapshot to return the
+// same value across calls, same as getSnapshot; a fresh [] literal each call causes React to
+// think the snapshot changed every render and loop forever.
+const EMPTY_CART: CartItem[] = [];
+
+function getServerSnapshot(): CartItem[] {
+  return EMPTY_CART;
+}
+
+// The hook components should use to read the cart — automatically re-renders on any mutation
+// below, and handles the server-has-no-cart / client-hydrates-real-cart split without a manual
+// "hydrated" state flag (React's own sanctioned pattern for external, client-only state).
+export function useCartItems(): CartItem[] {
+  return useSyncExternalStore(subscribe, () => cachedItems, getServerSnapshot);
 }
 
 export function getCart(): CartItem[] {
-  return readCart();
+  return cachedItems;
 }
 
 export function addToCart(book: Pick<Book, "isbn" | "title" | "author" | "price">): CartItem[] {
-  const items = readCart();
-  const existing = items.find((item) => item.isbn === book.isbn);
+  const existing = cachedItems.find((item) => item.isbn === book.isbn);
   const next = existing
-    ? items.map((item) =>
+    ? cachedItems.map((item) =>
         item.isbn === book.isbn ? { ...item, quantity: item.quantity + 1 } : item
       )
     : [
-        ...items,
+        ...cachedItems,
         { isbn: book.isbn, title: book.title, author: book.author, price: book.price, quantity: 1 },
       ];
   writeCart(next);
@@ -49,17 +78,16 @@ export function addToCart(book: Pick<Book, "isbn" | "title" | "author" | "price"
 }
 
 export function removeFromCart(isbn: string): CartItem[] {
-  const next = readCart().filter((item) => item.isbn !== isbn);
+  const next = cachedItems.filter((item) => item.isbn !== isbn);
   writeCart(next);
   return next;
 }
 
 export function setQuantity(isbn: string, quantity: number): CartItem[] {
-  const items = readCart();
   const next =
     quantity <= 0
-      ? items.filter((item) => item.isbn !== isbn)
-      : items.map((item) => (item.isbn === isbn ? { ...item, quantity } : item));
+      ? cachedItems.filter((item) => item.isbn !== isbn)
+      : cachedItems.map((item) => (item.isbn === isbn ? { ...item, quantity } : item));
   writeCart(next);
   return next;
 }
