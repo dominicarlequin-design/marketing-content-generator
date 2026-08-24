@@ -8,12 +8,17 @@ Owner: Jeffrey de la Cruz.
 
 ## Stack
 
-TBD — confirm against root `CLAUDE.md` > Stack (Next.js, TypeScript, Tailwind, Supabase) or note
-here if this product diverges.
+Next.js 16 (App Router), TypeScript (strict), Tailwind CSS v4, React 19, Supabase
+(`@supabase/supabase-js`) — matches root `CLAUDE.md` > Stack.
 
 ## Build / test / run
 
-Not yet set up — Jeffrey to fill in exact commands once the project is scaffolded.
+- `npm install`
+- Copy `.env.example` to `.env.local` and fill in a Supabase project's URL/anon key
+- `npm run dev` — local dev server
+- `npm run build` — production build
+- `npm run start` — run production build
+- `npm run lint` — ESLint
 
 ## Open items affecting this product
 
