@@ -74,3 +74,42 @@ Next up: order-placement spec (writes `orders`/`order_items`, decrements `stock_
 is genuinely INVARIANT (silent-wrong risk: double-counted stock, orphaned order rows) and per
 root `CLAUDE.md` needs a written `SPEC.md` and a human nod before any code, not just a scope
 answer. Draft proposed to Jeffrey on 2026-08-24 pending approval.
+
+## 2026-08-24 — Minimal customer auth
+
+Built per `SPEC.md` on `product-a/auth-spec`, stacked on `product-a/cart-ui`, after Jeffrey
+resolved the three open questions (customers table is Product-A-internal; customer_id is
+sequential, matching the synthetic dataset's `cust_XXXXX` style; no email verification for this
+MVP):
+
+- `apps/product-a/supabase/migrations/0001_books.sql` — the `books` table's create statement,
+  finally checked in (it existed only as instructions in this file before now).
+- `apps/product-a/supabase/migrations/0002_customers.sql` — `customers` table + a
+  `customer_id_seq` Postgres sequence starting at 1000, so generated IDs (`cust_01000` upward)
+  never collide with the synthetic dataset, which tops out at `cust_00094`.
+- `lib/auth.ts` — `signUp`, `signIn`, `signOut`, `getCurrentCustomerId()`, plus an internal
+  `ensureCustomerRow()` used by both signup and login (covers the case where the `customers`
+  insert failed after `auth.signUp()` succeeded).
+- `app/signup/page.tsx`, `app/login/page.tsx` — plain email/password forms, client-side calls
+  into `lib/auth.ts`, redirect to `/` on success.
+
+**Not wired up yet**: no "Log in" / "Sign out" link anywhere in the UI (only reachable by typing
+`/signup` or `/login`), and no route guarding — `/cart` works whether or not you're logged in.
+Both are the order-placement spec's job, not this one's, per this spec's stated Edge Cases.
+
+**Not verified**: same no-Node.js constraint as everything else in this session, plus these two
+migrations have never been run against a real Supabase project. Before trusting any of this:
+
+```
+cd apps/product-a
+# in the Supabase SQL editor, run supabase/migrations/0001_books.sql then 0002_customers.sql
+# enable Auth (email provider) in the Supabase project if not already on
+npm install && npm run dev
+```
+
+Then walk the spec's Verification steps by hand: sign up, confirm a `customers` row appears,
+log out/in, try a duplicate email.
+
+Next up: with a real `customer_id` now obtainable, the order-placement spec (writes
+`orders`/`order_items`, decrements `stock_quantity`) is unblocked on the identity side — still
+needs its own `SPEC.md` and a human nod before code, being INVARIANT.
