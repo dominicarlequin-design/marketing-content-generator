@@ -177,3 +177,23 @@ Product A now has, top to bottom: browse (sample or live data) → add to cart �
 → place order. What's left for a fuller "finished" product: wiring a live Supabase project (real
 data, real accounts, real orders — I don't have credentials to create one myself), a nav
 link for login/logout state, and loyalty points once an earn rate is decided.
+
+## 2026-08-24 — Nav login/logout link
+
+Built on `product-a/nav-auth-links`, stacked on `product-a/order-placement`:
+
+- `components/AuthNav.tsx` — client component, shows "Log in" / "Sign up" links when signed
+  out, or the current `customer_id` + a "Log out" button when signed in.
+- `app/layout.tsx` — added a shared header (site name, "Cart" link, `AuthNav`) so it's on every
+  page instead of just being reachable by typing `/login` or `/signup`.
+- `app/page.tsx` — removed its own "Riverside Books" heading and "View cart" link, now redundant
+  with the shared header.
+
+**Verified live** (real browser, `bun run dev`, fresh port 3000 since 3001 was still held by the
+prior session's server): build compiles clean, header renders correctly on both `/` and `/cart`
+with "Cart / Log in / Sign up" all present, zero console errors on either page.
+**Not verified**: the logged-in state (customer_id + "Log out") — needs a real Supabase session,
+which needs a live project.
+
+This was the one item from the three offered ("keep going") that didn't need anything from
+Jeffrey — the other two (live Supabase project, loyalty earn rate) are still waiting on him.

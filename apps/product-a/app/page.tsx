@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { getBooks } from "@/lib/books";
 import { AddToCartButton } from "@/components/AddToCartButton";
 
@@ -7,12 +6,6 @@ export default async function Home() {
 
   return (
     <main className="mx-auto max-w-2xl p-8">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Riverside Books</h1>
-        <Link href="/cart" className="text-sm underline">
-          View cart
-        </Link>
-      </div>
       <p className="mb-6 text-sm text-neutral-500">Browse what&apos;s on the shelf.</p>
 
       {source === "sample" && (
