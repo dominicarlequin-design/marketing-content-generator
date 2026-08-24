@@ -27,6 +27,12 @@ build/
 # private local agent roster — never committed, see root CLAUDE.md
 **/.claude/agents/
 
+# personal agent tooling state — never committed, see root CLAUDE.md
+.gstack/
+
+# alternate lockfile — team standard is npm (package-lock.json)
+bun.lock
+
 # debug
 npm-debug.log*
 yarn-debug.log*
