@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { generateContent } from "./contentGenerator";
+import { generateContent } from "../lib/generator";
 
 type ContentType = "instagram" | "newsletter" | "staffpick";
 
@@ -15,10 +15,9 @@ export default function Home() {
   const [bookTitle, setBookTitle] = useState("");
   const [authorName, setAuthorName] = useState("");
   const [titleError, setTitleError] = useState(false);
-  const [isbn, setIsbn] = useState("");
+  const [genre, setGenre] = useState("");
   const [eventTitle, setEventTitle] = useState("");
-  const [eventDateTime, setEventDateTime] = useState("");
-  const [eventDescription, setEventDescription] = useState("");
+  const [eventDate, setEventDate] = useState("");
   const [eventWarning, setEventWarning] = useState(false);
   const [results, setResults] = useState<GeneratedContent[] | null>(null);
   const [stamped, setStamped] = useState(false);
@@ -33,12 +32,11 @@ export default function Home() {
     setTitleError(false);
     if (!authorName) return;
     const content = generateContent({
-      book_title: bookTitle,
-      author_name: authorName,
-      ISBN: isbn,
+      title: bookTitle,
+      author: authorName,
+      genre,
       event_title: eventTitle,
-      "Author Events": eventDateTime,
-      event_description: eventDescription,
+      event_date: eventDate,
     });
     setEventWarning(Boolean(content.eventDataIncomplete));
     setResults([
@@ -123,13 +121,14 @@ export default function Home() {
 
             <label className="block border-b border-ink/20 py-3">
               <span className="font-mono text-[10px] uppercase tracking-wide text-ink/50">
-                ISBN
+                Genre
               </span>
               <input
-                value={isbn}
-                onChange={(e) => setIsbn(e.target.value)}
+                value={genre}
+                onChange={(e) => setGenre(e.target.value)}
                 className="mt-1 w-full bg-transparent font-body text-ink placeholder:italic placeholder:text-gray-400 outline-none"
-                placeholder="978-0-14-311830-4"
+                placeholder="fiction"
+                required
               />
             </label>
 
@@ -145,28 +144,15 @@ export default function Home() {
               />
             </label>
 
-            <label className="block border-b border-ink/20 py-3">
+            <label className="block py-3">
               <span className="font-mono text-[10px] uppercase tracking-wide text-ink/50">
                 Event Date/Time
               </span>
               <input
-                value={eventDateTime}
-                onChange={(e) => setEventDateTime(e.target.value)}
+                value={eventDate}
+                onChange={(e) => setEventDate(e.target.value)}
                 className="mt-1 w-full bg-transparent font-body text-ink placeholder:italic placeholder:text-gray-400 outline-none"
                 placeholder="Sept 5, 6:30pm"
-              />
-            </label>
-
-            <label className="block py-3">
-              <span className="font-mono text-[10px] uppercase tracking-wide text-ink/50">
-                Event Description
-              </span>
-              <textarea
-                value={eventDescription}
-                onChange={(e) => setEventDescription(e.target.value)}
-                className="mt-1 w-full resize-none bg-transparent font-body text-ink placeholder:italic placeholder:text-gray-400 outline-none"
-                placeholder="A cozy evening of readings and Q&A."
-                rows={2}
               />
             </label>
 
@@ -181,8 +167,8 @@ export default function Home() {
           <div className="space-y-4">
             {results && eventWarning && (
               <div className="rounded-sm border border-red-400 bg-red-50 px-4 py-3 font-mono text-xs text-red-700">
-                Event details incomplete — check Author Events, event title,
-                and description before publishing.
+                Event details incomplete — check event title and event date
+                before publishing.
               </div>
             )}
 
