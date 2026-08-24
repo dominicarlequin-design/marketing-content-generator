@@ -33,3 +33,14 @@ none silently picked one way or the other:**
 
 **Nothing above has been resolved by this bootstrap.** All three are blockers for anyone
 generating real data or building order-status logic until the team picks an answer.
+
+---
+
+## 2026-08-24 — Missing `price` column flagged (new open item 4)
+
+While building Product A's cart, found there is no `price` column anywhere in
+`docs/schema/riverside-books-schema.md` or the sample CSV. Product A's cart deliberately shows no
+dollar total rather than invent one. This blocks anyone building checkout, an order total, or a
+receipt — not just Product A. Needs a team decision on adding a `price` column (and where it
+belongs — likely a book attribute alongside `ISBN`/`book_title`, not per-order). Logged as
+schema item 4; not resolved by this entry, just surfaced.
