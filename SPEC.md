@@ -1,32 +1,64 @@
-# [SPEC] Product A — catalog browse page
+# [SPEC] Product A — minimal customer auth
 
-- Objective: Give customers a read-only page listing books available at Riverside Books, backed
-  by Supabase, so the ordering flow (a later spec) has something to order from.
-- Approach: A `books` table in Supabase with columns drawn straight from the shared schema
-  (`docs/schema/riverside-books-schema.md`) — no invented columns. A typed data-access function
-  fetches all rows server-side (Next.js Server Component) and renders a simple list. No client
-  state, no search/filter yet — smallest reviewable slice per Jeffrey's scope call. Alternative
-  considered: client-side fetch via the Supabase JS client in a `"use client"` component — rejected
-  for this first slice since a server component avoids shipping the anon key's query logic to the
-  browser bundle and needs no loading spinner.
+- Objective: Let a customer sign up and log in, producing a real `customer_id` that
+  order-placement (a later spec) can attach to an `orders` row — replacing the choice we already
+  ruled out of guessing or hardcoding one.
+- Approach: Use Supabase Auth (email + password) for credential handling — it's already in the
+  confirmed stack and already does password hashing/session management correctly; hand-rolling
+  that is exactly the kind of security-sensitive work this codebase shouldn't take on itself.
+  On successful sign-up, insert a row into a new `customers` table (`customer_id` text PK in the
+  shared `cust_XXXXX` format, `auth_user_id` uuid referencing Supabase's `auth.users.id`,
+  `signup_date` date) from the sign-up Server Action, right after `supabase.auth.signUp()`
+  succeeds. Login checks for a missing `customers` row and creates one if absent, so a
+  partial failure between the two inserts (network blip) doesn't permanently strand a user.
+  Alternative considered: a Postgres trigger on `auth.users` insert instead of an app-level
+  second insert — more atomic, but adds a piece of DB logic that isn't visible from this repo and
+  that whoever owns the Supabase project would need to maintain by hand outside git. Rejected for
+  this first slice in favor of the simpler, fully-in-repo app-level approach; worth revisiting if
+  the login-time backfill turns out to be flaky in practice.
 - Inputs/Outputs:
-  - Input: rows in a Supabase `books` table — `ISBN` (text, PK), `book_title` (text),
-    `author_name` (text), `stock_quantity` (integer).
-  - Output: `getBooks(): Promise<Book[]>` in `lib/books.ts`; rendered as a list on `/` (title,
-    author, in-stock/out-of-stock based on `stock_quantity`).
-- Verification: `npm run build` succeeds (TypeScript strict, no errors); `npm run dev`, visit
-  `/` — with `.env.local` unset, the page renders a clear "not configured" message instead of
-  crashing the whole route; with a Supabase project configured and a `books` table seeded (e.g.
-  from `docs/schema/riverside-books-integration-chaos-test.csv`), the page lists real rows.
-  **Not run in this session — no Node.js runtime available in the build environment.** Jeffrey (or
-  whoever picks this PR up) must run this before merging.
-- Files: `apps/product-a/lib/books.ts`, `apps/product-a/types/book.ts`, `apps/product-a/app/page.tsx`
-  (replacing the scaffold placeholder), `apps/product-a/lib/supabase.ts` (client now returns `null`
-  on missing env vars instead of throwing, so the page can render the not-configured message
-  instead of crashing), `apps/product-a/SESSION_STATE.md`.
-- Edge Cases: Supabase env vars unset (currently throws at import — this spec adds a guarded,
-  user-visible message instead of an unhandled crash); empty `books` table (empty state, not an
-  error); `stock_quantity` of 0 (shown as out-of-stock, not hidden).
-- Open Questions: none blocking — schema columns used here are already confirmed, no
-  `orders`/`order_items` dependency for a read-only catalog view.
-- Tipping Point: none — this is already the smallest reviewable slice.
+  - `/signup`: email + password form → `supabase.auth.signUp()` → create `customers` row.
+  - `/login`: email + password form → `supabase.auth.signInWithPassword()` → backfill
+    `customers` row if missing.
+  - Session: Supabase Auth's browser client persists the session itself (default behavior, no
+    custom cookie handling needed). A helper reads the current `customer_id` for later use by
+    order placement.
+  - New table `customers` (Product-A-internal — see Open Question 1 on whether this needs a
+    full-team nod or not): `customer_id` (text, PK, `cust_XXXXX`), `auth_user_id` (uuid, unique,
+    references `auth.users.id`), `signup_date` (date).
+- Verification: `npm run build` typechecks. Manual flow against a configured Supabase project
+  with Auth enabled: sign up with a test email, confirm a matching `customers` row appears; log
+  out, log back in, confirm the session persists across a reload; try signing up twice with the
+  same email, confirm Supabase Auth's own duplicate-email error surfaces instead of a crash.
+  **Cannot be run in this session** — no Node.js runtime, no live Supabase project.
+- Files: `apps/product-a/lib/auth.ts` (sign-up/sign-in/sign-out wrappers + current-session
+  helper), `apps/product-a/lib/customers.ts` (ensure-customer-row logic, shared by signup and
+  login), `apps/product-a/app/signup/page.tsx`, `apps/product-a/app/login/page.tsx`,
+  `apps/product-a/SESSION_STATE.md`.
+- Edge Cases: signup succeeds in Supabase Auth but the `customers` insert fails — handled by the
+  login-time backfill described above, not a silent stuck account. Duplicate email — surface
+  Supabase Auth's own error, don't write a second `customers` row. Logged-out user hitting
+  `/cart` — explicitly out of scope for this spec; route guarding is the order-placement spec's
+  job, not this one's.
+- Open Questions (need an answer before I write code):
+  1. Does the new `customers` table count as a schema change needing the full team's nod (root
+     `CLAUDE.md`: "schema changes are a team decision"), or is it Product-A-internal plumbing
+     since `customer_id` itself already exists in the shared schema and no other product's column
+     changes meaning? I'd treat it as internal and proceed, but this is exactly the kind of call
+     the rules say not to make unilaterally.
+  2. `customer_id` format — the shared schema's example is `cust_00042` (reads as sequential). Is
+     a random suffix (`cust_` + a short random string, with a uniqueness constraint so collisions
+     fail loudly instead of silently overwriting) acceptable, or does it need to actually be
+     sequential (a Postgres sequence)?
+  3. Does this MVP need Supabase's email-verification step turned on, or is unverified-email
+     signup fine for now?
+- Tipping Point: social login (Google, etc.) or magic-link-only auth is a follow-up spec, not
+  scope creep on this one.
+
+---
+
+**Sequencing note**: this branch (`product-a/auth-spec`) stacks on `product-a/cart-ui`, which
+stacks on `product-a/catalog-browse` — whose own `SPEC.md` entry is still active and unverified
+(see that branch / `apps/product-a/SESSION_STATE.md`). This file will conflict with that one at
+merge time by design — whoever merges these PRs in order should move the catalog-browse spec to
+`ARCHIVED_SPECS.md` once it's verified, before this one becomes the sole active spec.
