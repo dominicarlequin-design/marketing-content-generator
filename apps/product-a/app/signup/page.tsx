@@ -31,19 +31,27 @@ export default function SignupPage() {
     <main className="mx-auto max-w-sm p-8">
       <h1 className="text-2xl font-semibold">Sign up</h1>
       <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-3">
+        <label htmlFor="email" className="text-sm font-medium">
+          Email
+        </label>
         <input
+          id="email"
           type="email"
           required
-          placeholder="Email"
+          autoComplete="email"
           value={email}
           onChange={(event) => setEmail(event.target.value)}
           className="rounded border border-neutral-300 px-3 py-2 text-sm"
         />
+        <label htmlFor="password" className="text-sm font-medium">
+          Password
+        </label>
         <input
+          id="password"
           type="password"
           required
           minLength={6}
-          placeholder="Password"
+          autoComplete="new-password"
           value={password}
           onChange={(event) => setPassword(event.target.value)}
           className="rounded border border-neutral-300 px-3 py-2 text-sm"

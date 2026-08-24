@@ -323,3 +323,22 @@ can't be verified live from here without a real `GOOGLE_BOOKS_API_KEY`.
 8 sample books correctly post-rename, zero console errors. Sample data has no cover images by
 design (real ones need the live fetch this branch doesn't build) — the conditional thumbnail
 render itself is unverified against a real image URL.
+
+## 2026-08-24 — Accessibility: real `<label>` elements on every form input
+
+Built on `product-a/accessibility-labels`, stacked on `product-a/books-schema-retrofit`. Root
+`CLAUDE.md`'s quality standards call for semantic HTML on anything user-facing — every input in
+the app relied on `placeholder` as its only label, which fails that: placeholder text disappears
+once typing starts and isn't a reliable accessible name for all screen readers.
+
+- `app/signup/page.tsx`, `app/login/page.tsx` — real `<label htmlFor>` for email/password,
+  `placeholder` removed (redundant with a visible label), added `autoComplete` (`email`,
+  `new-password` / `current-password`) since that's free once real labels exist.
+- `app/cart/page.tsx` — the quantity input's label is visually hidden (`sr-only`) but present —
+  "Quantity" alone would be redundant on-screen next to the book title, but the input still
+  needs an accessible name distinguishing it from every other item's quantity field.
+
+**Verified live** (real browser, `bun run dev`): build compiles, `bun run lint` passes, and the
+accessibility tree snapshot on `/signup` now shows `[textbox] "Email"` / `[textbox] "Password"`
+resolved from the real labels (previously placeholder-derived, less reliable) — confirmed via
+screenshot too, not just the accessibility tree.
