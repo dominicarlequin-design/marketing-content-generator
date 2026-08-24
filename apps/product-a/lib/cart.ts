@@ -59,3 +59,7 @@ export function setQuantity(isbn: string, quantity: number): CartItem[] {
   writeCart(next);
   return next;
 }
+
+export function clearCart(): void {
+  writeCart([]);
+}

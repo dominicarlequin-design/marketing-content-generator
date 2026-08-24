@@ -3,7 +3,7 @@ import { getBooks } from "@/lib/books";
 import { AddToCartButton } from "@/components/AddToCartButton";
 
 export default async function Home() {
-  const { books, configured } = await getBooks();
+  const { books, source } = await getBooks();
 
   return (
     <main className="mx-auto max-w-2xl p-8">
@@ -15,19 +15,18 @@ export default async function Home() {
       </div>
       <p className="mb-6 text-sm text-neutral-500">Browse what&apos;s on the shelf.</p>
 
-      {!configured && (
-        <p className="rounded border border-amber-300 bg-amber-50 p-4 text-sm text-amber-800">
-          Supabase isn&apos;t configured yet. Copy <code>.env.example</code> to{" "}
-          <code>.env.local</code> and fill in your project&apos;s URL and anon key to see live
-          catalog data.
+      {source === "sample" && (
+        <p className="mb-6 rounded border border-amber-300 bg-amber-50 p-4 text-sm text-amber-800">
+          Showing sample data. Copy <code>.env.example</code> to <code>.env.local</code> and fill
+          in a Supabase project&apos;s URL and anon key to see your real catalog.
         </p>
       )}
 
-      {configured && books.length === 0 && (
+      {source === "supabase" && books.length === 0 && (
         <p className="text-sm text-neutral-500">No books in the catalog yet.</p>
       )}
 
-      {configured && books.length > 0 && (
+      {books.length > 0 && (
         <ul className="divide-y divide-neutral-200">
           {books.map((book) => (
             <li key={book.isbn} className="flex items-center justify-between py-3">

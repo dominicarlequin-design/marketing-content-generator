@@ -113,3 +113,67 @@ log out/in, try a duplicate email.
 Next up: with a real `customer_id` now obtainable, the order-placement spec (writes
 `orders`/`order_items`, decrements `stock_quantity`) is unblocked on the identity side — still
 needs its own `SPEC.md` and a human nod before code, being INVARIANT.
+
+## 2026-08-24 — Correction: this environment can actually run the app
+
+Every "not verified, no Node.js runtime" note above was written believing `npm`/`node` were
+unavailable. They are, but `bun` (a JS runtime, already on `PATH`) is installed and runs this
+Next.js app fine: `bun install`, `bun run build`, and `bun run dev` all work. Verified for real
+in this session, in an actual browser (via gstack's `/browse`):
+
+- `bun run build` on the full stack (scaffold + catalog-browse + cart-ui + auth-spec +
+  order-placement) compiles clean — TypeScript strict, zero errors, all 5 routes
+  (`/`, `/cart`, `/login`, `/signup`) generate.
+- Loaded all four pages in a real headless browser — zero console errors on any of them.
+- **Found and traced a real click-automation bug** (not an app bug): clicking a button
+  immediately after `snapshot` right after page navigation sometimes resolves to the wrong
+  element (browser-automation ref/hydration race). Adding `wait --networkidle` between
+  navigation and the next snapshot fixed it. Confirmed the underlying cart logic itself is
+  correct: clicking "Add to cart" on the same book twice correctly increments quantity to 2
+  (verified via `localStorage` directly), not a duplicate line item.
+- Added a **sample-data fallback** to `lib/books.ts` (`SAMPLE_BOOKS`, 8 real titles pulled from
+  `docs/schema/riverside-books-integration-chaos-test.csv`, not invented) so the catalog page
+  shows something real without a live Supabase project — `getBooks()` now returns
+  `{ books, source: "supabase" | "sample" }` instead of the old `configured` boolean.
+  `app/page.tsx` updated to match; verified live with a screenshot showing all 8 books, correct
+  out-of-stock disabling on one.
+- Verified the signup form's "Supabase isn't configured yet." error path renders correctly with
+  no crash and no console error when Supabase env vars aren't set.
+
+**Still not verified**: anything that requires an actual Supabase project (real signup/login,
+real catalog rows from the `books` table, the `place_order` RPC below) — there is no live
+Supabase project connected in this environment, sample-data/error-path fallbacks aside. That
+needs either a real project's URL + anon key, or someone running the migrations and testing by
+hand.
+
+## 2026-08-24 — Order placement
+
+Built per `SPEC.md` on `product-a/order-placement`, stacked on `product-a/auth-spec`:
+
+- `supabase/migrations/0003_orders.sql` — `orders`/`order_items` tables (per `DECISIONS.md`'s
+  working assumption) plus `place_order(p_customer_id, p_items)`, a Postgres function doing the
+  whole checkout atomically: create the order, lock + check + decrement `stock_quantity` per
+  item, insert `order_items`, raising (rolling back everything) if any item is short on stock.
+  `order_id` generated the same way as `customer_id` — a sequence, `ord_01000` upward.
+- `lib/orders.ts` — `placeOrder(customerId, items)` wrapping the RPC call.
+- `lib/cart.ts` — added `clearCart()`.
+- `app/cart/page.tsx` — "Place order" button when logged in; "Log in to place an order" link
+  when not (the route-guarding auth's spec deferred to here); order confirmation state showing
+  the new `order_id`, cart cleared on success.
+
+**Deliberately not built**: loyalty points. `reward_points` exists in the shared schema but
+there's no defined earn rate anywhere (per item? per dollar — which still needs the missing
+`price` column?) and guessing one would be exactly the "invent a number that should have been
+computed" mistake root `CLAUDE.md`'s Bounded AI rule warns against. Needs a decision from
+Jeffrey before it's built.
+
+**Verified live** (real browser, `bun run dev`): the logged-out `/cart` correctly shows "Log in
+to place an order" instead of a broken button, zero console errors, build compiles clean.
+**Not verified**: the actual `place_order` RPC — no live Supabase project to run it against, so
+the insufficient-stock rollback and the real order/stock-decrement path are unverified beyond
+the SQL logic itself.
+
+Product A now has, top to bottom: browse (sample or live data) → add to cart → sign up / log in
+→ place order. What's left for a fuller "finished" product: wiring a live Supabase project (real
+data, real accounts, real orders — I don't have credentials to create one myself), a nav
+link for login/logout state, and loyalty points once an earn rate is decided.

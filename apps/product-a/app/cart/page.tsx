@@ -2,19 +2,60 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { getCart, removeFromCart, setQuantity, type CartItem } from "@/lib/cart";
+import { clearCart, getCart, removeFromCart, setQuantity, type CartItem } from "@/lib/cart";
+import { getCurrentCustomerId } from "@/lib/auth";
+import { placeOrder } from "@/lib/orders";
 
 export default function CartPage() {
   const [items, setItems] = useState<CartItem[]>([]);
   const [hydrated, setHydrated] = useState(false);
+  const [customerId, setCustomerId] = useState<string | null>(null);
+  const [placing, setPlacing] = useState(false);
+  const [orderError, setOrderError] = useState<string | null>(null);
+  const [placedOrderId, setPlacedOrderId] = useState<string | null>(null);
 
   useEffect(() => {
     setItems(getCart());
     setHydrated(true);
+    getCurrentCustomerId().then(setCustomerId);
   }, []);
+
+  async function handlePlaceOrder() {
+    if (!customerId) {
+      return;
+    }
+    setPlacing(true);
+    setOrderError(null);
+
+    const result = await placeOrder(customerId, items);
+    setPlacing(false);
+
+    if (result.error) {
+      setOrderError(result.error);
+      return;
+    }
+
+    clearCart();
+    setItems([]);
+    setPlacedOrderId(result.orderId);
+  }
 
   if (!hydrated) {
     return null;
+  }
+
+  if (placedOrderId) {
+    return (
+      <main className="mx-auto max-w-2xl p-8">
+        <h1 className="text-2xl font-semibold">Order placed</h1>
+        <p className="mt-2 text-sm text-neutral-500">
+          Order <span className="font-mono">{placedOrderId}</span> is pending.
+        </p>
+        <Link href="/" className="mt-6 inline-block text-sm underline">
+          Back to the catalog
+        </Link>
+      </main>
+    );
   }
 
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
@@ -61,10 +102,29 @@ export default function CartPage() {
             ))}
           </ul>
           <p className="mt-6 text-xs text-neutral-400">
-            Checkout isn&apos;t built yet — the shared schema has no price column, so an order
-            total can&apos;t be computed until that&apos;s added (a schema decision, not
-            something to invent here).
+            No order total shown — the shared schema has no price column, so one can&apos;t be
+            computed (a schema decision, not something to invent here).
           </p>
+
+          {orderError && <p className="mt-4 text-sm text-red-600">{orderError}</p>}
+
+          {customerId ? (
+            <button
+              type="button"
+              onClick={handlePlaceOrder}
+              disabled={placing}
+              className="mt-4 rounded bg-neutral-900 px-4 py-2 text-sm font-medium text-white disabled:bg-neutral-300"
+            >
+              {placing ? "Placing order…" : "Place order"}
+            </button>
+          ) : (
+            <p className="mt-4 text-sm text-neutral-500">
+              <Link href="/login" className="underline">
+                Log in
+              </Link>{" "}
+              to place an order.
+            </p>
+          )}
         </>
       )}
     </main>
