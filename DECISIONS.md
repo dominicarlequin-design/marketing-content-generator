@@ -44,3 +44,15 @@ dollar total rather than invent one. This blocks anyone building checkout, an or
 receipt — not just Product A. Needs a team decision on adding a `price` column (and where it
 belongs — likely a book attribute alongside `ISBN`/`book_title`, not per-order). Logged as
 schema item 4; not resolved by this entry, just surfaced.
+
+---
+
+## 2026-08-24 — `price` column added (resolves item 4)
+
+Added `price` to `docs/schema/riverside-books-schema.md`'s shared columns: one value per `ISBN`
+(decimal, USD — e.g. `19.99`), sitting next to `stock_quantity` and `reorder_threshold` since it's
+a book attribute, not a per-order value — matches Jeffrey's own suggestion in the flag above.
+Deliberately **not** sourced from the Google Books API (`docs/google-books-integration-plan.md`,
+still under review) — retail price is Riverside's own decision, not book metadata, and Google's
+pricing data (where present at all) reflects Google Play Books sales, not what the store charges.
+Product A can now compute real cart/order totals instead of omitting them.

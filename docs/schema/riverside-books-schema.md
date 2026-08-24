@@ -20,13 +20,9 @@
    D has already built and pushed code against its own version. Needs a team conversation to pick
    one canonical enum, then updates to whichever product(s) don't match. See `DECISIONS.md`.
 
-4. **No `price` column anywhere in this schema — discovered building Product A's cart,
-   2026-08-24.** Nothing here or in the sample CSV records a per-book or per-item price. Any
-   product that needs to show or compute a dollar total (order subtotal, cart total, a receipt)
-   currently cannot — there's nothing to sum. Product A's cart page intentionally omits a total
-   rather than fabricate one. Needs a team decision: add a `price` column (and to which table —
-   probably alongside `ISBN`/`book_title`, not per-order, since price is a book attribute) before
-   anyone builds checkout, an order confirmation, or a receipt. See `DECISIONS.md`.
+4. **`price` column — resolved 2026-08-24.** Added below, alongside `stock_quantity` and
+   `reorder_threshold`: one `price` per `ISBN`, not per-order. Matches Jeffrey's own suggestion in
+   the original flag. See `DECISIONS.md`.
 
 ---
 
@@ -61,6 +57,7 @@ List every column your four products need to share. Below are the unified schema
 | stock_quantity | Total number of items currently available in inventory | integer | 40 |
 | reward_points | Total active loyalty points accumulated by the customer | integer | 250 |
 | reorder_threshold | Minimum stock quantity for this title before staff should reorder more copies | integer | 5 |
+| price | List price for the title, per unit (not per order) | decimal, USD | 19.99 |
 | quantity | Number of copies of a given title in an order | integer | 1 |
 
 ## Team Sign-Off
