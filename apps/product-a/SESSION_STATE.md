@@ -45,3 +45,32 @@ Next up: order the ordering-flow spec once catalog browse is verified — buildi
 before that would touch the `orders`/`order_items` working assumption from `DECISIONS.md`
 2026-08-24, which is genuinely INVARIANT (money/state, not just display) and needs its own
 spec + nod first.
+
+## 2026-08-24 — Cart UI
+
+Client-side "add to cart" on `product-a/cart-ui`, stacked on `product-a/catalog-browse`. OBSERVABLE
+lane — no schema writes, no money math, no spec required:
+
+- `lib/cart.ts` — cart read/write against `localStorage` (key `riverside-books-cart`). Not
+  persisted anywhere server-side; this is a browser-only cart, not an order.
+- `components/AddToCartButton.tsx` — per-book button on the catalog page, disabled when
+  `stockQuantity` is 0.
+- `app/cart/page.tsx` — view/edit quantities, remove items. Explicitly does **not** show a dollar
+  total: the shared schema has no `price` column, so nothing is fabricated. Flagged in the page
+  copy itself.
+- `app/page.tsx` — wired up the button per row and added a "View cart" link.
+
+**Data-model gap surfaced by this work**: there is no `price` column anywhere in
+`docs/schema/riverside-books-schema.md` or the sample CSV. Checkout/order-total math is
+impossible without one. This is a schema-change decision (root `CLAUDE.md` — needs a proposal +
+nod from each product owner), not something to invent here. Worth raising with the team before
+the order-placement spec below is written, since it may end up needing a price field too.
+
+**Not verified**: same no-Node.js constraint — the localStorage read/write logic, the
+add/remove/quantity flows, and the empty-cart state have not been run in a browser in this
+session.
+
+Next up: order-placement spec (writes `orders`/`order_items`, decrements `stock_quantity`) — this
+is genuinely INVARIANT (silent-wrong risk: double-counted stock, orphaned order rows) and per
+root `CLAUDE.md` needs a written `SPEC.md` and a human nod before any code, not just a scope
+answer. Draft proposed to Jeffrey on 2026-08-24 pending approval.
