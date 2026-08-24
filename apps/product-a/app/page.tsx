@@ -26,6 +26,7 @@ export default async function Home() {
               <div>
                 <p className="font-medium">{book.title}</p>
                 <p className="text-sm text-neutral-500">{book.author}</p>
+                <p className="text-sm text-neutral-700">${book.price.toFixed(2)}</p>
                 <p className="text-xs text-neutral-400">
                   {book.stockQuantity > 0 ? `${book.stockQuantity} in stock` : "Out of stock"}
                 </p>

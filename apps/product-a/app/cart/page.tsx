@@ -13,6 +13,7 @@ export default function CartPage() {
   const [placing, setPlacing] = useState(false);
   const [orderError, setOrderError] = useState<string | null>(null);
   const [placedOrderId, setPlacedOrderId] = useState<string | null>(null);
+  const [placedOrderTotal, setPlacedOrderTotal] = useState<number | null>(null);
 
   useEffect(() => {
     setItems(getCart());
@@ -35,6 +36,7 @@ export default function CartPage() {
       return;
     }
 
+    setPlacedOrderTotal(totalPrice);
     clearCart();
     setItems([]);
     setPlacedOrderId(result.orderId);
@@ -49,7 +51,8 @@ export default function CartPage() {
       <main className="mx-auto max-w-2xl p-8">
         <h1 className="text-2xl font-semibold">Order placed</h1>
         <p className="mt-2 text-sm text-neutral-500">
-          Order <span className="font-mono">{placedOrderId}</span> is pending.
+          Order <span className="font-mono">{placedOrderId}</span> is pending
+          {placedOrderTotal !== null && <> — ${placedOrderTotal.toFixed(2)}</>}.
         </p>
         <Link href="/" className="mt-6 inline-block text-sm underline">
           Back to the catalog
@@ -59,6 +62,7 @@ export default function CartPage() {
   }
 
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
+  const totalPrice = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   return (
     <main className="mx-auto max-w-2xl p-8">
@@ -79,6 +83,10 @@ export default function CartPage() {
                 <div>
                   <p className="font-medium">{item.title}</p>
                   <p className="text-sm text-neutral-500">{item.author}</p>
+                  <p className="text-sm text-neutral-700">
+                    ${item.price.toFixed(2)} × {item.quantity} = $
+                    {(item.price * item.quantity).toFixed(2)}
+                  </p>
                 </div>
                 <div className="flex items-center gap-2">
                   <input
@@ -101,10 +109,7 @@ export default function CartPage() {
               </li>
             ))}
           </ul>
-          <p className="mt-6 text-xs text-neutral-400">
-            No order total shown — the shared schema has no price column, so one can&apos;t be
-            computed (a schema decision, not something to invent here).
-          </p>
+          <p className="mt-4 text-right text-sm font-medium">Total: ${totalPrice.toFixed(2)}</p>
 
           {orderError && <p className="mt-4 text-sm text-red-600">{orderError}</p>}
 

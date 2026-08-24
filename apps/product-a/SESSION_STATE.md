@@ -197,3 +197,35 @@ which needs a live project.
 
 This was the one item from the three offered ("keep going") that didn't need anything from
 Jeffrey — the other two (live Supabase project, loyalty earn rate) are still waiting on him.
+
+## 2026-08-24 — Real prices and totals (unblocked by the schema's new `price` column)
+
+While waiting on Jeffrey's answers above, someone else pushed a resolution to
+`docs/flag-missing-price-column` directly: `price` (decimal USD, per `ISBN`) is now in the
+canonical shared schema — see `DECISIONS.md`. Worth Jeffrey's attention: that commit doesn't show
+sign-off from Philip, Priscilla, or Dominic, which is what root `CLAUDE.md`'s schema-change rule
+calls for; not something to unilaterally undo, just flagging it.
+
+That said, it unblocks real Product A work, done on `product-a/pricing`, stacked on
+`product-a/nav-auth-links`:
+
+- `supabase/migrations/0004_add_price_to_books.sql` — `alter table books add column price` (a
+  new migration, not an edit to the already-committed `0001_books.sql`).
+- `types/book.ts`, `lib/books.ts` — `Book` now carries `price`. `SAMPLE_BOOKS` gets placeholder
+  demo prices (the synthetic CSV has none) since sample mode is still the demo path per Jeffrey's
+  "skip Supabase for now" answer above. Supabase's `numeric` columns come back as strings, not
+  numbers — `getBooks()` explicitly coerces with `Number(row.price)`, a real correctness fix, not
+  cosmetic (`.toFixed()` would otherwise throw on the live-data path).
+- `lib/cart.ts` — `CartItem` carries `price`, captured at add-to-cart time.
+- `app/page.tsx` — shows each book's price.
+- `app/cart/page.tsx` — shows a per-line subtotal, a cart grand total, and the order total on the
+  confirmation screen. Removed the old "no total shown" disclaimer, now inaccurate.
+
+**Loyalty points are still not built.** Jeffrey chose points-per-dollar, which needed exactly
+this column — it now exists, but the actual rate (points per dollar — 1:1? 10:1?) is still
+undecided. That's the next real question before writing the loyalty code, not implied by
+"points per dollar" on its own.
+
+**Verified live** (real browser, `bun run dev`, port 3000): build compiles clean, catalog shows
+all 8 sample prices correctly, added two different books to cart and confirmed both the per-line
+math and the grand total ($17.99 + $18.99 = $36.98) are correct, zero console errors throughout.

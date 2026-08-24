@@ -3,4 +3,5 @@ export type Book = {
   title: string;
   author: string;
   stockQuantity: number;
+  price: number;
 };

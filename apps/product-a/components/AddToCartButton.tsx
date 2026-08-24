@@ -5,7 +5,7 @@ import { addToCart } from "@/lib/cart";
 import type { Book } from "@/types/book";
 
 type Props = {
-  book: Pick<Book, "isbn" | "title" | "author">;
+  book: Pick<Book, "isbn" | "title" | "author" | "price">;
   disabled?: boolean;
 };
 

@@ -6,6 +6,7 @@ export type CartItem = {
   isbn: string;
   title: string;
   author: string;
+  price: number;
   quantity: number;
 };
 
@@ -32,14 +33,17 @@ export function getCart(): CartItem[] {
   return readCart();
 }
 
-export function addToCart(book: Pick<Book, "isbn" | "title" | "author">): CartItem[] {
+export function addToCart(book: Pick<Book, "isbn" | "title" | "author" | "price">): CartItem[] {
   const items = readCart();
   const existing = items.find((item) => item.isbn === book.isbn);
   const next = existing
     ? items.map((item) =>
         item.isbn === book.isbn ? { ...item, quantity: item.quantity + 1 } : item
       )
-    : [...items, { isbn: book.isbn, title: book.title, author: book.author, quantity: 1 }];
+    : [
+        ...items,
+        { isbn: book.isbn, title: book.title, author: book.author, price: book.price, quantity: 1 },
+      ];
   writeCart(next);
   return next;
 }
