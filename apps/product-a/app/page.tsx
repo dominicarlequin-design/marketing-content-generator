@@ -22,16 +22,29 @@ export default async function Home() {
       {books.length > 0 && (
         <ul className="divide-y divide-neutral-200">
           {books.map((book) => (
-            <li key={book.isbn} className="flex items-center justify-between py-3">
-              <div>
-                <p className="font-medium">{book.title}</p>
-                <p className="text-sm text-neutral-500">{book.author}</p>
-                <p className="text-sm text-neutral-700">${book.price.toFixed(2)}</p>
-                <p className="text-xs text-neutral-400">
-                  {book.stockQuantity > 0 ? `${book.stockQuantity} in stock` : "Out of stock"}
-                </p>
+            <li key={book.isbn} className="flex items-center gap-4 py-3">
+              {book.coverImageUrl && (
+                // Cover source isn't confirmed yet (docs/google-books-integration-plan.md, live
+                // fetching not built), so no fixed remote-image domain to configure next/image
+                // against.
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={book.coverImageUrl}
+                  alt=""
+                  className="h-16 w-11 flex-shrink-0 rounded-sm object-cover"
+                />
+              )}
+              <div className="flex flex-1 items-center justify-between">
+                <div>
+                  <p className="font-medium">{book.title}</p>
+                  <p className="text-sm text-neutral-500">{book.author}</p>
+                  <p className="text-sm text-neutral-700">${book.price.toFixed(2)}</p>
+                  <p className="text-xs text-neutral-400">
+                    {book.stockQuantity > 0 ? `${book.stockQuantity} in stock` : "Out of stock"}
+                  </p>
+                </div>
+                <AddToCartButton book={book} disabled={book.stockQuantity === 0} />
               </div>
-              <AddToCartButton book={book} disabled={book.stockQuantity === 0} />
             </li>
           ))}
         </ul>

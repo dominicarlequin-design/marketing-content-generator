@@ -34,7 +34,7 @@ export async function getOrderHistory(customerId: string): Promise<OrderHistoryR
 
   const { data, error } = await supabase
     .from("orders")
-    .select("order_id, order_status, order_items(quantity, ISBN, books(book_title, author_name, price))")
+    .select("order_id, order_status, order_items(quantity, isbn, books(title, author, price))")
     .eq("customer_id", customerId)
     .order("order_id", { ascending: false });
 
@@ -47,12 +47,12 @@ export async function getOrderHistory(customerId: string): Promise<OrderHistoryR
     status: row.order_status,
     items: (row.order_items ?? []).map((item) => {
       // Supabase infers embedded relations as arrays without an explicit Database type; this
-      // FK (order_items.ISBN -> books.ISBN) is actually one book per row, so take the first.
+      // FK (order_items.isbn -> books.isbn) is actually one book per row, so take the first.
       const book = item.books?.[0];
       return {
-        isbn: item.ISBN,
-        title: book?.book_title ?? "Unknown title",
-        author: book?.author_name ?? "Unknown author",
+        isbn: item.isbn,
+        title: book?.title ?? "Unknown title",
+        author: book?.author ?? "Unknown author",
         price: Number(book?.price ?? 0),
         quantity: item.quantity,
       };

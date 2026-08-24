@@ -40,20 +40,21 @@ export async function getBooks(): Promise<BooksResult> {
 
   const { data, error } = await supabase
     .from("books")
-    .select("ISBN, book_title, author_name, stock_quantity, price");
+    .select("isbn, title, author, stock_quantity, price, cover_image_url");
 
   if (error) {
     throw error;
   }
 
   const books: Book[] = (data ?? []).map((row) => ({
-    isbn: row.ISBN,
-    title: row.book_title,
-    author: row.author_name,
+    isbn: row.isbn,
+    title: row.title,
+    author: row.author,
     stockQuantity: row.stock_quantity,
     // Postgres numeric columns come back from Supabase as strings, not numbers, to avoid float
     // precision loss — coerce explicitly so .toFixed() etc. work on the live-data path too.
     price: Number(row.price),
+    coverImageUrl: row.cover_image_url,
   }));
 
   return { books, source: "supabase" };

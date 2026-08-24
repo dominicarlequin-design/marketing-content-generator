@@ -285,3 +285,41 @@ TypeScript pass, not a runtime surprise.
 logged-out `/orders` correctly shows "Log in to see your order history" with zero console
 errors. **Not verified**: the actual populated order-history view — needs a real Supabase
 session with real orders in it, same constraint as everywhere else this session.
+
+## 2026-08-24 — Books schema retrofit for the Google Books plan (live fetching NOT built)
+
+Discovered mid-session: `docs/google-books-integration-plan.md` (branch
+`docs/google-books-live-data-plan`, team-confirmed 2026-08-24, unmerged) — a team decision to
+source `book_title`/`author_name`/cover art live from the Google Books API, cached in a `books`
+table shaped `isbn`/`title`/`author`/`cover_image_url`/`found`/`cached_at`. Written assuming
+Product A hadn't started yet; it had, with a different column shape entirely
+(`"ISBN"`/`book_title`/`author_name`, no cache-bookkeeping columns).
+
+**Tested the actual Google Books API from this environment before doing anything else**:
+unauthenticated requests return `429 Quota exceeded... quota_limit_value: "0"` — completely
+blocked, not just low-volume, matching what the plan's own author already found. Confirmed
+general internet access works fine (`google.com` → 200) and that Open Library (Dominic's
+original, already-proven source, which the team explicitly moved away from) works perfectly
+right now with no key. Reported this to Jeffrey before proceeding — he chose to do the schema
+retrofit now but hold off on building live fetching until the API-key question is resolved.
+
+Built on `product-a/books-schema-retrofit`, stacked on `product-a/order-history`:
+
+- `supabase/migrations/0005_google_books_schema.sql` — renames `books."ISBN"` → `isbn`,
+  `book_title` → `title`, `author_name` → `author`; adds `cover_image_url`, `found`,
+  `cached_at`; renames `order_items."ISBN"` → `isbn` to match; re-creates `place_order()` (new
+  migration, not an edit to `0003_orders.sql`) against the new column names.
+- `types/book.ts` — added optional `coverImageUrl`, null/undefined until live fetching exists.
+- `lib/books.ts`, `lib/orders.ts` — updated every Supabase query/mapping to the renamed columns.
+- `app/page.tsx` — renders a cover thumbnail when `coverImageUrl` is present (plain `<img>`, not
+  `next/image` — no confirmed remote-image domain to allowlist yet since nothing fetches covers).
+
+**Deliberately not built**: `getBook(isbn)`, the actual Google Books fetch/cache-on-miss
+function the plan describes. Schema is ready for it; the fetch logic isn't written because it
+can't be verified live from here without a real `GOOGLE_BOOKS_API_KEY`.
+
+**Verified live** (real browser, `bun run dev`): build compiles clean, `bun run lint` passes
+(one `eslint-disable` for the intentional plain `<img>`, justified inline), catalog renders all
+8 sample books correctly post-rename, zero console errors. Sample data has no cover images by
+design (real ones need the live fetch this branch doesn't build) — the conditional thumbnail
+render itself is unverified against a real image URL.
