@@ -34,6 +34,9 @@ export function AuthNav() {
 
   return (
     <span className="flex items-center gap-4 text-sm">
+      <Link href="/orders" className="underline">
+        My orders
+      </Link>
       <span className="text-neutral-500">{customerId}</span>
       <button
         type="button"

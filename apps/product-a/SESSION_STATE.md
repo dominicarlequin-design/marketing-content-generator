@@ -261,3 +261,27 @@ cart reactivity re-tested end to end — added 2 books (math correct: $17.99 + $
 removed one, total updated instantly to $16.99, zero console errors throughout. This is the
 first time cart mutations were confirmed to update the UI reactively without a manual
 `setItems(...)` call after each one.
+
+## 2026-08-24 — Order history
+
+Built on `product-a/order-history`, stacked on `product-a/cart-lint-fix`. Closes a real gap:
+until now, placing an order only ever showed a one-time confirmation screen — there was no way
+to see it again afterward.
+
+- `types/order.ts` — `Order` / `OrderLineItem` types.
+- `lib/orders.ts` — `getOrderHistory(customerId)`, using Supabase's nested-select syntax to join
+  `orders` → `order_items` → `books` in one query instead of three round-trips.
+- `app/orders/page.tsx` — lists past orders with line items, per-order total, and status; "Log in
+  to see your order history" when signed out.
+- `components/AuthNav.tsx` — added a "My orders" link, shown only when signed in.
+
+**Real TypeScript catch while building this**: without an explicit Supabase `Database` type
+passed to `createClient()`, PostgREST's embedded-relation types come back as arrays even for a
+to-one foreign key (`order_items.ISBN → books.ISBN`, one book per row) — `item.books.book_title`
+doesn't type-check, it has to be `item.books[0]?.book_title`. Caught by `bun run build`'s
+TypeScript pass, not a runtime surprise.
+
+**Verified live** (real browser, `bun run dev`): build compiles clean, `bun run lint` passes,
+logged-out `/orders` correctly shows "Log in to see your order history" with zero console
+errors. **Not verified**: the actual populated order-history view — needs a real Supabase
+session with real orders in it, same constraint as everywhere else this session.
