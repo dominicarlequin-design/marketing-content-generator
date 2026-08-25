@@ -99,6 +99,10 @@ function normalizeIsbn(isbn: string): string {
 
 const cache = new Map<string, BookMetadata | null>();
 
+export function clearCacheEntry(key: string): void {
+  cache.delete(key);
+}
+
 async function fetchFromOpenLibrary(isbn: string): Promise<BookMetadata | null> {
   const url = `https://openlibrary.org/api/books?bibkeys=ISBN:${isbn}&format=json&jscmd=data`;
   const res = await fetch(url);
