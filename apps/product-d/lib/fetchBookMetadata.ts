@@ -40,6 +40,16 @@ interface OpenLibraryBookEntry {
 // "Juvenile fiction" heading) was dropped because it fires on adult-crossover
 // classics, not just children's books — see session notes for the evidence
 // (The Catcher in the Rye, To Kill a Mockingbird both wrongly landed here).
+//
+// That heading is genuinely ambiguous, not just loosely matched: verified
+// directly against Open Library's API, both false-positive books carry the
+// literal subject string "juvenile fiction" (not some looser "juvenile
+// delinquency"-style phrase) — so tightening the substring match alone can't
+// fix this, the same exact phrase is a true signal from one source and a
+// false one from the other. Google Books, confirmed via live spot-check
+// (Charlotte's Web, Where the Wild Things Are), uses "Juvenile Fiction" /
+// "Juvenile Nonfiction" as its actual children's category — a real signal,
+// but only for that source. Hence the source parameter below.
 // Known accepted edge case: The Hobbit still matches, because it carries
 // genuine "Children's fiction"/"children's books"/"Children's stories" tags —
 // not just "juvenile" — and Charlotte's Web (an unambiguous children's book)
@@ -59,8 +69,22 @@ const GENRE_KEYWORD_RULES: [Genre, string[]][] = [
   ["fiction", ["fiction", "novel", "fantasy", "literature"]],
 ];
 
-function mapSubjectsToGenre(subjects: string[]): Genre {
+// Only trustworthy as a children's signal for Google Books — see comment above.
+const GOOGLE_BOOKS_CHILDRENS_KEYWORDS = ["juvenile fiction", "juvenile nonfiction"];
+
+function mapSubjectsToGenre(
+  subjects: string[],
+  subjectSource: "openlibrary" | "google-books"
+): Genre {
   const lowered = subjects.map((s) => s.toLowerCase());
+
+  if (
+    subjectSource === "google-books" &&
+    lowered.some((subject) => GOOGLE_BOOKS_CHILDRENS_KEYWORDS.some((keyword) => subject.includes(keyword)))
+  ) {
+    return "children's";
+  }
+
   for (const [genre, keywords] of GENRE_KEYWORD_RULES) {
     if (lowered.some((subject) => keywords.some((keyword) => subject.includes(keyword)))) {
       return genre;
@@ -90,7 +114,7 @@ async function fetchFromOpenLibrary(isbn: string): Promise<BookMetadata | null> 
     title: entry.title,
     author: entry.authors?.[0]?.name ?? "Unknown",
     coverUrl: entry.cover?.medium ?? entry.cover?.large ?? entry.cover?.small ?? null,
-    genre: mapSubjectsToGenre(subjects),
+    genre: mapSubjectsToGenre(subjects, "openlibrary"),
     source: "openlibrary",
   };
 }
