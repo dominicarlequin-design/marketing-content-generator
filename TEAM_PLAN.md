@@ -40,11 +40,28 @@ the "wait for" column — merging out of order causes real conflicts, not just m
 
 ## Tomorrow morning, in order
 
-1. **Whoever is awake first: approve PR #5** (price). It's clean, already matches what Jeffrey's own code independently built against — just needs the actual GitHub approval click.
-2. **Merge PR #5.**
-3. **Jeffrey opens a PR for `docs/resolve-order-status-enum-product-a`** (real, finished work — it just never got opened as a PR). Get it approved, then merge it — after #5, not before, since both touch the same two files.
-4. **Merge PR #10** — already approved, no file conflicts with anything above, can genuinely happen any time, even before step 1 if someone wants to.
-5. **Once #10 is merged:** Jeffrey (or whoever verifies it) sets up a real Supabase project and checks the order-placement flow works live — add to cart, place an order, confirm stock decrements, confirm an over-order correctly fails. Once verified, archive that spec into `ARCHIVED_SPECS.md` and clear `SPEC.md`. This step is what unblocks Dominic.
+**Step zero, before anything else: approve and merge PR #5, then PR #13 (the PR that adds this
+file and `AGENTS.md`).** You're reading this because you already pulled `main` — but if anyone
+hasn't yet, or their AI assistant hasn't, none of the rest of this sequence works: PR #13 has to
+actually be merged and pulled before "point your AI at `AGENTS.md`" means anything. Do this part
+first, literally before opening or reviewing any other PR.
+
+1. **Approve PR #5** (price). It's clean, already matches what Jeffrey's own code independently
+   built against — just needs the actual GitHub approval click.
+2. **Approve PR #13** (this file plus `AGENTS.md`).
+3. **Merge both** (order between these two doesn't matter — they don't touch any of the same
+   files).
+4. **Everyone pulls `main` locally** before starting anything else, so your own working copy and
+   your AI assistant both actually have `AGENTS.md` and the rest of this plan.
+5. **Jeffrey opens a PR for `docs/resolve-order-status-enum-product-a`** (real, finished work — it
+   just never got opened as a PR). Get it approved, then merge it — after #5, not before, since
+   both touch the same two files.
+6. **Merge PR #10** — already approved, no file conflicts with anything above, can genuinely
+   happen any time, even before step 1 if someone wants to.
+7. **Once #10 is merged:** Jeffrey (or whoever verifies it) sets up a real Supabase project and
+   checks the order-placement flow works live — add to cart, place an order, confirm stock
+   decrements, confirm an over-order correctly fails. Once verified, archive that spec into
+   `ARCHIVED_SPECS.md` and clear `SPEC.md`. This step is what unblocks Dominic.
 
 ---
 

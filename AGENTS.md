@@ -15,6 +15,12 @@ already be stale by the time you read it. If what you find on `main` doesn't mat
 trust `main`, not this file, and tell the person you're working with about the mismatch rather
 than silently proceeding on outdated assumptions.
 
+**Specifically check for PR #5 and PR #13** (the PR that added this file and `TEAM_PLAN.md`) in
+that log. Both needed a human approval as of this writing. If either isn't merged into `main` yet,
+stop and tell your human rather than proceeding — the rest of this plan, and the fact that you're
+even able to read this file from a local pull, assumes both already landed. Approving or merging
+a PR is a human decision; don't do it yourself even if you technically could.
+
 ## Do not touch these files without checking first
 
 | File(s) | Rule |
